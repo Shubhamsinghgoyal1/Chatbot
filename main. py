@@ -1,0 +1,68 @@
+import nltk
+import datetime
+import random
+import re
+from nltk.chat.util import Chat, reflections
+
+# Store user's name globally
+user_name = ""
+
+# Define pairs of patterns and responses
+pairs = [
+    # Greetings
+    (r"hi|hello|hey", ["Hello, how can I assist you today?", "Hi there! How can I help you?"]),
+    (r"how are you?", ["I'm doing great, thank you for asking!", "I'm just a bot, but I'm doing well!"]),
+    
+    # Respond with user's name
+    (r"my name is (.*)", [lambda match: f"Nice to meet you, {match.group(1)}!", lambda match: set_user_name(match.group(1))]),
+    
+    # Asking the bot's name
+    (r"what is your name?", ["I don't have a name, but you can call me Chatbot!"]),
+    
+    # Weather queries (fake response for the sake of this example)
+    (r"what's the weather like\??", ["I don't have access to live weather data, but I hope it's sunny where you are!", "It’s always sunny here in the cloud!"]),
+    
+    # Mood checking
+    (r"how do you feel\??", ["I don't have feelings, but I'm here to help you!", "I feel great as always, thank you!"]),
+    
+    # Time and Date
+    (r"what time is it\??", [lambda: f"The current time is {datetime.datetime.now().strftime('%H:%M:%S')}."]),
+    (r"what's the date today\??", [lambda: f"Today's date is {datetime.datetime.now().strftime('%B %d, %Y')}."]),
+    
+    # Basic calculations
+    (r"what is (.*) plus (.*)", [lambda match: f"{match.group(1)} + {match.group(2)} is {float(match.group(1)) + float(match.group(2))}"]),
+    (r"what is (.*) minus (.*)", [lambda match: f"{match.group(1)} - {match.group(2)} is {float(match.group(1)) - float(match.group(2))}"]),
+    (r"what is (.*) multiplied by (.*)", [lambda match: f"{match.group(1)} * {match.group(2)} is {float(match.group(1)) * float(match.group(2))}"]),
+    (r"what is (.*) divided by (.*)", [lambda match: f"{match.group(1)} / {match.group(2)} is {float(match.group(1)) / float(match.group(2))}"]),
+    
+    # Telling jokes
+    (r"tell me a joke", [lambda: random.choice(["Why don’t skeletons fight each other? They don’t have the guts.",
+                                              "What did one wall say to the other wall? I’ll meet you at the corner.",
+                                              "Why did the scarecrow win an award? Because he was outstanding in his field!"])]),
+    
+    # Catch-all fallback for unrecognized input
+    (r"(.*)", ["I'm sorry, I didn't quite get that. Can you ask me something else?", "I don't understand that. Can you rephrase your question?"])
+]
+
+# Function to set the user's name
+def set_user_name(name):
+    global user_name
+    user_name = name
+    return f"Got it, {user_name}! I'll remember your name from now on."
+
+# Create a chatbot instance with the pairs and reflections (for simple pronoun handling)
+chatbot = Chat(pairs, reflections)
+
+# Function to start the chat
+def start_chat():
+    print("Chatbot: Hi! I'm here to help you. Type 'bye' to end the chat.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ['bye', 'goodbye']:
+            print("Chatbot: Goodbye!")
+            break
+        response = chatbot.respond(user_input)
+        print(f"Chatbot: {response}")
+
+if __name__ == "__main__":
+    start_chat()
