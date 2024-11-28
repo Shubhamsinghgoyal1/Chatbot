@@ -1,0 +1,27 @@
+Chatbot: Hi! I'm here to help you. Type 'bye' to end the chat.
+You: hi
+Chatbot: Hello, how can I assist you today?
+
+You: my name is Alice
+Chatbot: Got it, Alice! I'll remember your name from now on.
+
+You: how are you?
+Chatbot: I'm doing great, thank you for asking!
+
+You: what's the weather like?
+Chatbot: I don't have access to live weather data, but I hope it's sunny where you are!
+
+You: tell me a joke
+Chatbot: Why don’t skeletons fight each other? They don’t have the guts.
+
+You: what is 5 plus 3
+Chatbot: 5 + 3 is 8.0
+
+You: what is 10 multiplied by 6
+Chatbot: 10 * 6 is 60.0
+
+You: what time is it?
+Chatbot: The current time is 15:30:45.
+
+You: bye
+Chatbot: Goodbye!
