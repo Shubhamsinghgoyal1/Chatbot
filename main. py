@@ -1,68 +1,126 @@
-import nltk
-import datetime
 import random
-import re
-from nltk.chat.util import Chat, reflections
+import requests
+import spacy
+import datetime
 
-# Store user's name globally
-user_name = ""
+# Load spaCy's English model
+nlp = spacy.load("en_core_web_sm")
 
-# Define pairs of patterns and responses
-pairs = [
-    # Greetings
-    (r"hi|hello|hey", ["Hello, how can I assist you today?", "Hi there! How can I help you?"]),
-    (r"how are you?", ["I'm doing great, thank you for asking!", "I'm just a bot, but I'm doing well!"]),
-    
-    # Respond with user's name
-    (r"my name is (.*)", [lambda match: f"Nice to meet you, {match.group(1)}!", lambda match: set_user_name(match.group(1))]),
-    
-    # Asking the bot's name
-    (r"what is your name?", ["I don't have a name, but you can call me Chatbot!"]),
-    
-    # Weather queries (fake response for the sake of this example)
-    (r"what's the weather like\??", ["I don't have access to live weather data, but I hope it's sunny where you are!", "It’s always sunny here in the cloud!"]),
-    
-    # Mood checking
-    (r"how do you feel\??", ["I don't have feelings, but I'm here to help you!", "I feel great as always, thank you!"]),
-    
-    # Time and Date
-    (r"what time is it\??", [lambda: f"The current time is {datetime.datetime.now().strftime('%H:%M:%S')}."]),
-    (r"what's the date today\??", [lambda: f"Today's date is {datetime.datetime.now().strftime('%B %d, %Y')}."]),
-    
-    # Basic calculations
-    (r"what is (.*) plus (.*)", [lambda match: f"{match.group(1)} + {match.group(2)} is {float(match.group(1)) + float(match.group(2))}"]),
-    (r"what is (.*) minus (.*)", [lambda match: f"{match.group(1)} - {match.group(2)} is {float(match.group(1)) - float(match.group(2))}"]),
-    (r"what is (.*) multiplied by (.*)", [lambda match: f"{match.group(1)} * {match.group(2)} is {float(match.group(1)) * float(match.group(2))}"]),
-    (r"what is (.*) divided by (.*)", [lambda match: f"{match.group(1)} / {match.group(2)} is {float(match.group(1)) / float(match.group(2))}"]),
-    
-    # Telling jokes
-    (r"tell me a joke", [lambda: random.choice(["Why don’t skeletons fight each other? They don’t have the guts.",
-                                              "What did one wall say to the other wall? I’ll meet you at the corner.",
-                                              "Why did the scarecrow win an award? Because he was outstanding in his field!"])]),
-    
-    # Catch-all fallback for unrecognized input
-    (r"(.*)", ["I'm sorry, I didn't quite get that. Can you ask me something else?", "I don't understand that. Can you rephrase your question?"])
-]
+# Define intents and responses
+intents = {
+    "greeting": ["Hello! How can I assist you?", "Hi there! What can I do for you today?"],
+    "goodbye": ["Goodbye! Have a great day!", "Bye! Take care!"],
+    "help": [
+        "You can ask me about the weather, request a joke, or say 'quit' to exit. How can I assist you?"
+    ],
+    "default": ["I'm not sure I understand. Could you rephrase?", "Can you tell me more about that?"]
+}
 
-# Function to set the user's name
-def set_user_name(name):
-    global user_name
-    user_name = name
-    return f"Got it, {user_name}! I'll remember your name from now on."
+# OpenWeatherMap API settings
+WEATHER_API_KEY = "98543ed2ef9e000b6e6977e00f7ba7a5"
+WEATHER_API_URL = "http://api.openweathermap.org/data/2.5/weather"
 
-# Create a chatbot instance with the pairs and reflections (for simple pronoun handling)
-chatbot = Chat(pairs, reflections)
+# Joke API settings
+JOKE_API_URL = "https://v2.jokeapi.dev/joke/Any"
 
-# Function to start the chat
-def start_chat():
-    print("Chatbot: Hi! I'm here to help you. Type 'bye' to end the chat.")
+# Helper function to detect intent
+def detect_intent(user_input):
+    doc = nlp(user_input)
+    if any(token.lower_ in ["hello", "hi", "hey"] for token in doc):
+        return "greeting"
+    elif any(token.lower_ in ["weather", "rain", "sunny", "forecast"] for token in doc):
+        return "weather"
+    elif "joke" in user_input.lower():
+        return "joke"
+    elif any(token.lower_ in ["bye", "goodbye", "quit"] for token in doc):
+        return "goodbye"
+    elif "help" in user_input.lower():
+        return "help"
+    else:
+        return "default"
+
+# Get real-time weather using OpenWeatherMap API
+def get_weather(city):
+    try:
+        params = {"q": city, "appid": WEATHER_API_KEY, "units": "metric"}
+        response = requests.get(WEATHER_API_URL, params=params)
+        data = response.json()
+        if response.status_code == 200:
+            weather = data["weather"][0]["description"].capitalize()
+            temp = data["main"]["temp"]
+            return f"The current weather in {city} is {weather} with a temperature of {temp}°C."
+        else:
+            return "Sorry, I couldn't find the weather for that location. Please try again."
+    except Exception as e:
+        return "There was an error retrieving the weather. Please try later."
+
+# Get a random joke using JokeAPI
+def get_joke():
+    try:
+        response = requests.get(JOKE_API_URL)
+        data = response.json()
+        if "joke" in data:
+            return data["joke"]
+        elif "setup" in data and "delivery" in data:
+            return f"{data['setup']} ... {data['delivery']}"
+        else:
+            return "I couldn't fetch a joke right now. Please try again later."
+    except Exception as e:
+        return "There was an error fetching a joke. Please try later."
+
+# Dynamic greeting based on the time of day
+def get_greeting():
+    current_hour = datetime.datetime.now().hour
+    if current_hour < 12:
+        return "Good morning! How can I assist you today?"
+    elif 12 <= current_hour < 18:
+        return "Good afternoon! What can I help you with?"
+    else:
+        return "Good evening! What do you need assistance with?"
+
+# Main chatbot interface
+def chatbot_interface():
+    print(f"ChatBot: {get_greeting()}")
+    user_name = None  # To store the user's name
+    
     while True:
-        user_input = input("You: ")
-        if user_input.lower() in ['bye', 'goodbye']:
-            print("Chatbot: Goodbye!")
+        user_input = input("You: ").strip()
+        
+        # Detect intent
+        intent = detect_intent(user_input)
+        
+        # Handle quit intent
+        if intent == "goodbye":
+            print("ChatBot: Goodbye! Have a great day!")
             break
-        response = chatbot.respond(user_input)
-        print(f"Chatbot: {response}")
+        
+        # Handle name input
+        if "my name is" in user_input.lower():
+            user_name = user_input.split("my name is")[-1].strip().capitalize()
+            print(f"ChatBot: Nice to meet you, {user_name}!")
+            continue
+        
+        # Handle weather intent
+        if intent == "weather":
+            print("ChatBot: Which city do you want the weather for?")
+            city = input("You: ").strip()
+            response = get_weather(city)
+            print(f"ChatBot: {response}")
+            continue
+        
+        # Handle joke intent
+        if intent == "joke":
+            response = get_joke()
+            print(f"ChatBot: {response}")
+            continue
+        
+        # Generate response for other intents
+        response = random.choice(intents[intent])
+        if user_name:
+            response = response.replace("!", f", {user_name}!")
+        
+        print(f"ChatBot: {response}")
 
+# Run the chatbot
 if __name__ == "__main__":
-    start_chat()
+    chatbot_interface()
