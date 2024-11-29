@@ -1,9 +1,14 @@
-ChatBot: Good afternoon! How can I assist you today?
-You: What's the weather like?
+
+You: python -u "c:\Users\shubham singh goyal\Desktop\codeAlfa projects\chatbot\main.py"
+ChatBot: Can you tell me more about that?
+You: my name is shubham
+ChatBot: Nice to meet you, Shubham!
+You: weather
 ChatBot: Which city do you want the weather for?
-You: London
-ChatBot: The current weather in London is Light rain with a temperature of 15°C.
-You: Tell me a joke
-ChatBot: Why don't skeletons fight each other? ... They don't have the guts!
-You: Quit
+You: indore
+ChatBot: The current weather in indore is Clear sky with a temperature of 20.1°C.
+You: tell me a joke
+ChatBot: Why do Jewish women prefer circumcised men? ... Cause they won't take anything until it's atleast 10% off.
+ChatBot: Can you tell me more about that?
+You: goodbye
 ChatBot: Goodbye! Have a great day!
